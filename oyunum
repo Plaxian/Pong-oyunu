@@ -1,0 +1,193 @@
+import pygame
+import random
+
+
+pygame.init()
+
+class PongOyunu:
+    def __init__(self):
+        self.goruntu_yuzeyi_genislik = 1000
+        self.goruntu_yuzeyi_yukseklik = 750
+
+        self.goruntu_yuzeyi = pygame.display.set_mode((self.goruntu_yuzeyi_genislik, self.goruntu_yuzeyi_yukseklik))
+        pygame.display.set_caption("Pong Oyunu")
+
+        self.font = pygame.font.Font("AttackGraffiti.ttf", 36)
+
+        self.siyah = (0, 0, 0)
+        self.beyaz = (255, 255, 255)
+        self.kirmizi = (255, 0, 0)
+        self.mavi = (0, 0, 255)
+        self.sol_raket_renk = (255, 0, 0)
+        self.sag_raket_renk = (0, 0, 255)
+
+        self.bitis_skoru = 3
+        self.sag_skor = 0
+        self.sol_skor = 0
+
+        self.top_genislik = 20
+        self.top_yukseklik = 20
+        self.top_hizi = 5
+        self.top = pygame.Rect(self.goruntu_yuzeyi_genislik // 2 - self.top_genislik // 2,
+                               self.goruntu_yuzeyi_yukseklik // 2 - self.top_yukseklik // 2,
+                               self.top_genislik, self.top_yukseklik)
+        self.top_hareket = [random.choice([1, -1]), random.uniform(1, 2)]
+
+        self.raket_genislik = 10
+        self.raket_yukseklik = 60
+        self.raket_hizi = 5
+        self.sol_raket = pygame.Rect(30, self.goruntu_yuzeyi_yukseklik // 2 - self.raket_yukseklik // 2,
+                                     self.raket_genislik, self.raket_yukseklik)
+        self.sag_raket = pygame.Rect(self.goruntu_yuzeyi_genislik - 30 - self.raket_genislik,
+                                    self.goruntu_yuzeyi_yukseklik // 2 - self.raket_yukseklik // 2,
+                                    self.raket_genislik, self.raket_yukseklik)
+
+        self.kale_genislik = 20
+        self.kale_yukseklik = 100
+        self.sol_kale = pygame.Rect(0, self.goruntu_yuzeyi_yukseklik // 2 - self.kale_yukseklik // 2,
+                                    self.kale_genislik, self.kale_yukseklik)
+        self.sag_kale = pygame.Rect(self.goruntu_yuzeyi_genislik - self.kale_genislik,
+                                    self.goruntu_yuzeyi_yukseklik // 2 - self.kale_yukseklik // 2,
+                                    self.kale_genislik, self.kale_yukseklik)
+
+        self.oyun_bitti = False
+        self.oyun_bitti_zamani = None
+
+    def draw(self):
+        beyaz = (255, 255, 255)
+        skor_sol_raket_metni = self.font.render(str(self.sol_skor), True, beyaz)
+        skor_sol_raket_koordinati = skor_sol_raket_metni.get_rect()
+        skor_sol_raket_koordinati.centerx = self.goruntu_yuzeyi_genislik // 10
+        skor_sol_raket_koordinati.top = 10
+
+        skor_sag_raket_metni = self.font.render(str(self.sag_skor), True, beyaz)
+        skor_sag_raket_koordinati = skor_sag_raket_metni.get_rect()
+        skor_sag_raket_koordinati.centerx = 3 * self.goruntu_yuzeyi_genislik // 4
+        skor_sag_raket_koordinati.top = 10
+
+        if self.oyun_bitti:
+            oyun_bitti_metni = self.font.render('OYUN BITTI', True, beyaz)
+            oyun_bitti_koordinati = oyun_bitti_metni.get_rect()
+            oyun_bitti_koordinati.center = (self.goruntu_yuzeyi_genislik // 2, self.goruntu_yuzeyi_yukseklik // 2 - 100)
+
+            kazanan_metni = self.font.render(f'KAZANAN: {"Sol" if self.sol_skor >= self.bitis_skoru else "Sag"} Raket', True, beyaz)
+            kazanan_koordinati = kazanan_metni.get_rect()
+            kazanan_koordinati.center = (self.goruntu_yuzeyi_genislik // 2, self.goruntu_yuzeyi_yukseklik // 2)
+
+            yeniden_basla_metni = self.font.render('YENİDEN BASLAMAK ICIN ESC YE BASIN', True, beyaz)
+            yeniden_basla_koordinati = yeniden_basla_metni.get_rect()
+            yeniden_basla_koordinati.center = (self.goruntu_yuzeyi_genislik // 2, self.goruntu_yuzeyi_yukseklik // 2 + 200)
+
+            self.goruntu_yuzeyi.blit(oyun_bitti_metni, oyun_bitti_koordinati)
+            self.goruntu_yuzeyi.blit(kazanan_metni, kazanan_koordinati)
+            self.goruntu_yuzeyi.blit(yeniden_basla_metni, yeniden_basla_koordinati)
+        else:
+            self.goruntu_yuzeyi.blit(skor_sol_raket_metni, skor_sol_raket_koordinati)
+            self.goruntu_yuzeyi.blit(skor_sag_raket_metni, skor_sag_raket_koordinati)
+
+        pygame.display.update()
+
+    def oyun_bitis(self):
+        self.oyun_bitti = True
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        self.__init__()
+                        return
+            self.draw()
+    def baslat(self):
+        saat = pygame.time.Clock()
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+            if not self.oyun_bitti:
+                self.top_hareket_kontrol()
+                self.top_hareket_uygula()
+                self.raket_hareket_kontrol()
+
+            self.goruntu_yuzeyi.fill(self.siyah)
+            pygame.draw.rect(self.goruntu_yuzeyi, self.beyaz, self.sol_raket)
+            pygame.draw.rect(self.goruntu_yuzeyi, self.beyaz, self.sag_raket)
+            pygame.draw.ellipse(self.goruntu_yuzeyi, self.beyaz, self.top)
+
+            pygame.draw.line(self.goruntu_yuzeyi, self.beyaz, (self.goruntu_yuzeyi_genislik // 2, 0),
+                             (self.goruntu_yuzeyi_genislik // 2, self.goruntu_yuzeyi_yukseklik), 1)
+
+            pygame.draw.circle(self.goruntu_yuzeyi, self.beyaz,
+                               (self.goruntu_yuzeyi_genislik // 2, self.goruntu_yuzeyi_yukseklik // 2), 30, 1)
+
+            pygame.draw.rect(self.goruntu_yuzeyi, self.kirmizi, self.sol_raket)
+            pygame.draw.rect(self.goruntu_yuzeyi, self.mavi, self.sag_raket)
+            pygame.draw.ellipse(self.goruntu_yuzeyi, self.beyaz, self.top)
+
+            pygame.draw.rect(self.goruntu_yuzeyi, self.beyaz, self.sol_kale)
+            pygame.draw.rect(self.goruntu_yuzeyi, self.beyaz, self.sag_kale)
+
+            self.draw()
+
+            pygame.display.flip()
+            saat.tick(60)
+
+            if self.oyun_bitti_zamani is not None and pygame.time.get_ticks() - self.oyun_bitti_zamani >= 2000:
+                self.oyun_bitti_zamani = None
+                self.__init__()
+
+    def top_hareket_kontrol(self):
+        if self.top.top <= 0 or self.top.bottom >= self.goruntu_yuzeyi_yukseklik:
+            self.top_hareket[1] *= -1
+
+        if self.top.colliderect(self.sol_raket) or self.top.colliderect(self.sag_raket):
+            self.top_hareket[0] *= -1
+
+        if self.top.left <= 0:
+            self.sag_skor += 1
+            if self.sag_skor >= self.bitis_skoru:
+                self.oyun_bitis()
+            else:
+                self.top_reset()
+
+        if self.top.right >= self.goruntu_yuzeyi_genislik:
+            self.sol_skor += 1
+            if self.sol_skor >= self.bitis_skoru:
+                self.oyun_bitis()
+            else:
+                self.top_reset()
+
+    def top_reset(self):
+        self.top.x = self.goruntu_yuzeyi_genislik // 2 - self.top_genislik // 2
+        self.top.y = self.goruntu_yuzeyi_yukseklik // 2 - self.top_yukseklik // 2
+        self.top_hareket = [random.choice([1, -1]), random.uniform(1, 2)]
+
+    def top_hareket_uygula(self):
+        self.top.x += self.top_hareket[0] * self.top_hizi
+        self.top.y += self.top_hareket[1] * self.top_hizi
+
+    def raket_hareket_kontrol(self):
+        tuslar = pygame.key.get_pressed()
+
+        if tuslar[pygame.K_UP] and self.sag_raket.top > 0:
+            self.sag_raket.y -= self.raket_hizi
+
+        if tuslar[pygame.K_DOWN] and self.sag_raket.bottom < self.goruntu_yuzeyi_yukseklik:
+            self.sag_raket.y += self.raket_hizi
+
+        if tuslar[pygame.K_w] and self.sol_raket.top > 0:
+            self.sol_raket.y -= self.raket_hizi
+
+        if tuslar[pygame.K_s] and self.sol_raket.bottom < self.goruntu_yuzeyi_yukseklik:
+            self.sol_raket.y += self.raket_hizi
+
+
+if __name__ == "__main__":
+    pong_oyunu = PongOyunu()
+    pong_oyunu.baslat()
+
+pygame.quit()
